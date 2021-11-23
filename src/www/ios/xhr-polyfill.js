@@ -895,7 +895,8 @@
         else
         {
           if ("all" === interceptRemoteRequests ||
-             ("secureOnly" === interceptRemoteRequests && context.url.startsWith("https://")))
+             ("secureOnly" === interceptRemoteRequests && (context.url.startsWith("https://") ||
+             context.url.startsWith("http://"))))
             resolve(new HttpHandler(context, config));
           else
             resolve(new DelegateHandler(context, config));
