@@ -606,6 +606,9 @@
         url: HttpHandler._resolveUri(reqContext.url), method: reqContext.method,
         headers: reqContext.requestHeaders,
         body: bodyAsBase64String, timeout: timeoutInSecs};
+
+      console.log("XML HTTP REQUEST SEND - NATIVE POST MESSAGE");
+      console.log(reqPayLoad);
       
       if (this._isTraceLoggingEnabled())
         console.log("xhr-polyfill.js - native XHR Request:\n %o", reqPayLoad);
@@ -613,7 +616,12 @@
       HttpHandler._presend(reqContext, requestDataSize);
 
       window.webkit.messageHandlers.nativeXHR.postMessage(reqPayLoad);
-    }.bind(this)).catch(HttpHandler._error.bind(this, reqContext));
+    }.bind(this)).catch(function (e) {
+      console.log("ERROR REJECT HTTP SEND");
+      console.log(reqContext);
+      console.log(e);
+      HttpHandler._error.bind(this, reqContext)
+    });
   };
 
   HttpHandler._presend = function (reqContext, requestDataSize)
@@ -882,6 +890,7 @@
       HandlerFactory._getConfig().then(function (config)
       {
         var interceptRemoteRequests = config["InterceptRemoteRequests"];
+        console.log("GETTING HANDLER");
 
         if (context.interceptRemoteRequests)           // backdoor to override per instance
           interceptRemoteRequests = context.interceptRemoteRequests;
@@ -890,16 +899,21 @@
           ((context.url.indexOf("://") === -1 && window.location.protocol === "file:") ||
            (context.url.toLowerCase().startsWith("file://"))))
         {
+          console.log("FILE HANDLER");
           resolve(new FileHandler(context, config));
         }
         else
         {
           if ("all" === interceptRemoteRequests ||
              ("secureOnly" === interceptRemoteRequests && (context.url.startsWith("https://") ||
-             context.url.startsWith("http://"))))
-            resolve(new HttpHandler(context, config));
-          else
+             context.url.startsWith("http://")))) {
+              console.log("HTTP HANDLER");
+              resolve(new HttpHandler(context, config));
+             }
+          else {
+            console.log("DELEGATE HANDLER");
             resolve(new DelegateHandler(context, config));
+          }
         }
       });
     });
@@ -1221,6 +1235,8 @@
 
   window.XMLHttpRequest.prototype.send = function (data)
   {
+    console.log("XML HTTP REQUEST SEND");
+    console.log(data);
     if ("GET" !== this._context.method && "HEAD" !== this._context.method)
       this._context.requestData = data;
 
